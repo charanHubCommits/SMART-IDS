@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test - Cache Check</title>
+</head>
+<body>
+    <h1>Testing API Directly</h1>
+    <button onclick="testAPI()">Test API (Click Me!)</button>
+    <div id="results"></div>
+    
+    <script>
+    async function testAPI() {
+        const response = await fetch('/api/simulate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({model: 'random_forest', num_packets: 20})
+        });
+        const data = await response.json();
+        
+        let html = '<h3>Results:</h3><ol>';
+        data.results.forEach(r => {
+            const color = r.label === 'ATTACK' ? 'red' : 'green';
+            html += `<li style="color: ${color}"><b>${r.label}</b> (actual: ${r.actual_label})</li>`;
+        });
+        html += '</ol>';
+        
+        const attacks = data.results.filter(r => r.prediction === 1).length;
+        html += `<p><b>Total: ${data.results.length}, Attacks: ${attacks}</b></p>`;
+        
+        document.getElementById('results').innerHTML = html;
+    }
+    </script>
+</body>
+</html>
+
+
+

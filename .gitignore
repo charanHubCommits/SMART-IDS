@@ -1,0 +1,17 @@
+venv/
+__pycache__/
+.DS_Store
+.cursor/
+
+# Large/raw data
+data/*.csv
+data.zip
+outputs/
+
+# Model artifacts (can be regenerated)
+project_files/models/*.pkl
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+
