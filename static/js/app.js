@@ -124,6 +124,17 @@ function setupEventListeners() {
         rateValue.textContent = `${this.value} pkt/sec`;
     });
 
+    // Model selection dropdown - prevent selecting disabled options
+    const modelSelect = document.getElementById('modelSelect');
+    modelSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.disabled) {
+            // If disabled option selected, revert to auto
+            this.value = 'auto';
+            showAlert('Selected model is not available. Using Auto mode.', 'warning');
+        }
+    });
+
     // Start simulation button
     document.getElementById('startSimulation').addEventListener('click', startSimulation);
 
@@ -141,7 +152,16 @@ function setupEventListeners() {
 function startSimulation() {
     if (isSimulating) return;
 
-    const model = document.getElementById('modelSelect').value;
+    const modelSelect = document.getElementById('modelSelect');
+    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+    
+    // Check if selected option is disabled
+    if (selectedOption.disabled) {
+        showAlert('Selected model is not available. Please select a different model.', 'danger');
+        return;
+    }
+
+    const model = modelSelect.value;
     const rate = parseInt(document.getElementById('packetRate').value);
     const interval = 1000 / rate; // Convert to milliseconds
 
@@ -151,9 +171,9 @@ function startSimulation() {
     document.getElementById('startSimulation').disabled = true;
     document.getElementById('stopSimulation').disabled = false;
 
-    // Start periodic simulation
+    // Start periodic simulation - read model from dropdown each time to allow dynamic switching
     simulationInterval = setInterval(() => {
-        simulatePacket(model);
+        simulatePacket(); // Will read current model from dropdown
     }, interval);
 
     showAlert('Simulation started', 'success');
@@ -178,6 +198,21 @@ function stopSimulation() {
 // Simulate a single packet
 async function simulatePacket(model) {
     try {
+        // Always read current model from dropdown (allows switching during simulation)
+        const modelSelect = document.getElementById('modelSelect');
+        const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+        
+        // Use provided model if given, otherwise read from dropdown
+        if (!model) {
+            if (selectedOption.disabled) {
+                model = 'auto'; // Fall back to auto if selected model is disabled
+            } else {
+                model = modelSelect.value;
+            }
+        }
+        
+        console.log(`Simulating with model: ${model}`);
+        
         const response = await fetch('/api/simulate', {
             method: 'POST',
             headers: {
@@ -259,7 +294,7 @@ function processDetection(result) {
     if (result.prediction === 1) {
         const confidence = (result.confidence * 100).toFixed(1);
         showAlert(
-            `⚠️ Attack detected! Confidence: ${confidence}%`,
+            `Attack detected! Confidence: ${confidence}%`,
             'danger',
             2000
         );

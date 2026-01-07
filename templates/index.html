@@ -36,11 +36,11 @@
                             <label for="modelSelect" class="form-label">Select Classifier</label>
                             <select class="form-select" id="modelSelect">
                                 <option value="auto" selected>Auto (best confidence)</option>
-                                <option value="random_forest" {% if models.random_forest %} {% else %}disabled{% endif %}>Random Forest {% if not models.random_forest %}(Not Available){% endif %}</option>
-                                <option value="svm" {% if not models.svm %}disabled{% endif %}>SVM {% if not models.svm %}(Coming Soon){% endif %}</option>
-                                <option value="decision_tree" {% if not models.decision_tree %}disabled{% endif %}>Decision Tree {% if not models.decision_tree %}(Coming Soon){% endif %}</option>
-                                <option value="xgboost" {% if not models.xgboost %}disabled{% endif %}>XGBoost {% if not models.xgboost %}(Coming Soon){% endif %}</option>
-                                <option value="logistic_regression" {% if not models.logistic_regression %}disabled{% endif %}>Logistic Regression {% if not models.logistic_regression %}(Coming Soon){% endif %}</option>
+                                <option value="random_forest" {% if not models.random_forest %}disabled{% endif %}>Random Forest {% if not models.random_forest %}(Not Available){% endif %}</option>
+                                <option value="svm" {% if not models.svm %}disabled{% endif %}>SVM {% if not models.svm %}(Not Available){% endif %}</option>
+                                <option value="decision_tree" {% if not models.decision_tree %}disabled{% endif %}>Decision Tree {% if not models.decision_tree %}(Not Available){% endif %}</option>
+                                <option value="xgboost" {% if not models.xgboost %}disabled{% endif %}>XGBoost {% if not models.xgboost %}(Not Available){% endif %}</option>
+                                <option value="logistic_regression" {% if not models.logistic_regression %}disabled{% endif %}>Logistic Regression {% if not models.logistic_regression %}(Not Available){% endif %}</option>
                             </select>
                         </div>
 

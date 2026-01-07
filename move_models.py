@@ -5,7 +5,7 @@ Move models from Jupyter notebook to Flask app location
 import shutil
 import os
 
-print("🔄 Moving models from Jupyter notebook to Flask app...")
+print("Moving models from Jupyter notebook to Flask app...")
 
 # Create project_files/models directory
 os.makedirs('project_files/models', exist_ok=True)
@@ -20,13 +20,13 @@ models_to_move = [
 for source, destination in models_to_move:
     if os.path.exists(source):
         shutil.copy2(source, destination)
-        print(f"✅ Moved {source} → {destination}")
+        print(f"Moved {source} -> {destination}")
     else:
-        print(f"❌ Not found: {source}")
+        print(f"Not found: {source}")
 
-print("\n🎉 Models ready for Flask web app!")
-print("📁 Location: project_files/models/")
-print("🚀 Run: python app.py")
+print("\nModels ready for Flask web app!")
+print("Location: project_files/models/")
+print("Run: python app.py")
 
 
 

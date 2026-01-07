@@ -40,10 +40,10 @@ def load_models_and_scalers():
             try:
                 models[key] = joblib.load(path)
                 available += 1
-                print(f"✓ Loaded model: {key} ({path})")
+                print(f"Loaded model: {key} ({path})")
             except Exception as e:
                 models[key] = None
-                print(f"✗ Failed to load {key} from {path}: {e}")
+                print(f"Failed to load {key} from {path}: {e}")
         else:
             models[key] = None
 
@@ -54,11 +54,11 @@ def load_models_and_scalers():
             shared_scaler = joblib.load(scaler_path)
             for key in models.keys():
                 scalers[key] = shared_scaler
-            print("✓ Scaler loaded")
+            print("Scaler loaded")
         except Exception as e:
-            print(f"⚠️  Warning: Failed to load scaler: {e}")
+            print(f"Warning: Failed to load scaler: {e}")
     else:
-        print("⚠️  Warning: Scaler not found. Please run training first.")
+        print("Warning: Scaler not found. Please run training first.")
 
     # Load feature names if available (used to align incoming features)
     feature_path = 'project_files/models/feature_names.pkl'
@@ -66,12 +66,12 @@ def load_models_and_scalers():
     if os.path.exists(feature_path):
         try:
             feature_names = joblib.load(feature_path)
-            print(f"✓ Loaded {len(feature_names)} feature names")
+            print(f"Loaded {len(feature_names)} feature names")
         except Exception as e:
-            print(f"⚠️  Warning: Failed to load feature names: {e}")
+            print(f"Warning: Failed to load feature names: {e}")
 
     if available == 0:
-        print("❌ No models found. Please train or copy models into project_files/models/")
+        print("Error: No models found. Please train or copy models into project_files/models/")
 
 # Load models on startup
 load_models_and_scalers()
@@ -138,14 +138,14 @@ for file in attack_sim_files:
                         if not missing_cols:
                             attack_df = attack_df[all_columns]
                             sample_data.append(attack_df)
-                            print(f"  ✓ Added {len(attack_df)} attack samples from {file.split('/')[-1]}")
+                            print(f"  Added {len(attack_df)} attack samples from {file.split('/')[-1]}")
                         else:
-                            print(f"  ✗ Skipped {file.split('/')[-1]} - missing columns: {missing_cols}")
+                            print(f"  Skipped {file.split('/')[-1]} - missing columns: {missing_cols}")
                     else:
                         sample_data.append(attack_df)
-                        print(f"  ✓ Added {len(attack_df)} attack samples from {file.split('/')[-1]}")
+                        print(f"  Added {len(attack_df)} attack samples from {file.split('/')[-1]}")
         except Exception as e:
-            print(f"  ✗ Error loading {file.split('/')[-1]}: {str(e)}")
+            print(f"  Error loading {file.split('/')[-1]}: {str(e)}")
 
 if sample_data:
     simulation_data = pd.concat(sample_data, ignore_index=True)
@@ -166,7 +166,7 @@ if sample_data:
     X_sim.fillna(0, inplace=True)
     
     feature_names = X_sim.columns.tolist()
-    print(f"✓ Loaded {len(simulation_data)} samples for simulation")
+    print(f"Loaded {len(simulation_data)} samples for simulation")
 else:
     X_sim = None
     y_sim = None
@@ -414,11 +414,11 @@ def model_info(model_name):
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🚀 SmartIDS Web Interface Starting...")
+    print("SmartIDS Web Interface Starting...")
     print("="*60)
-    print(f"📊 Models loaded: {sum(1 for m in models.values() if m is not None)}/{len(models)}")
-    print(f"📦 Simulation data: {len(X_sim) if X_sim is not None else 0} packets")
-    print(f"🔧 Features: {len(feature_names)}")
+    print(f"Models loaded: {sum(1 for m in models.values() if m is not None)}/{len(models)}")
+    print(f"Simulation data: {len(X_sim) if X_sim is not None else 0} packets")
+    print(f"Features: {len(feature_names)}")
     print("="*60 + "\n")
     
     app.run(debug=True, host='0.0.0.0', port=5001)
