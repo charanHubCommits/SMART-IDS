@@ -16,3 +16,4 @@ project_files/models/*.pkl
 
 
 data/*.csv
+project_files/models/*.pkl
