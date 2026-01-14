@@ -6,6 +6,7 @@ from datetime import datetime
 import json
 import os
 from sklearn.preprocessing import StandardScaler
+from collections import Counter
 
 app = Flask(__name__)
 
@@ -22,6 +23,7 @@ def add_header(response):
 models = {}
 scalers = {}
 feature_names = []
+ENSEMBLE_CONF_THRESHOLD = 0.6
 
 def load_models_and_scalers():
     """Load available models and shared scaler from disk."""
@@ -59,7 +61,7 @@ def load_models_and_scalers():
             print(f"Warning: Failed to load scaler: {e}")
     else:
         print("Warning: Scaler not found. Please run training first.")
-
+    
     # Load feature names if available (used to align incoming features)
     feature_path = 'project_files/models/feature_names.pkl'
     global feature_names
@@ -203,12 +205,12 @@ def predict():
     try:
         data = request.json
         model_name = data.get('model', 'auto')
-
+        
         # Get features from request
         features = data.get('features', [])
         if not features:
             return jsonify({'error': 'No features provided'}), 400
-
+        
         # Helper to run a single model
         def run_model(name, feats):
             model = models.get(name)
@@ -235,19 +237,37 @@ def predict():
             return jsonify({'error': 'No models available'}), 400
 
         if model_name == 'auto':
-            # Evaluate across all available models and pick highest confidence
+            # Evaluate across all available models and do ensemble voting
             results = [run_model(m, features) for m in available_models]
             results = [r for r in results if r is not None]
             if not results:
                 return jsonify({'error': 'No models available'}), 400
-            best = max(results, key=lambda r: r['confidence'])
-            best['timestamp'] = datetime.now().isoformat()
-            best['model_selected'] = best['model']
-            best['evaluated_models'] = [
-                {'model': r['model'], 'confidence': r['confidence'], 'prediction': r['prediction']}
-                for r in results
-            ]
-            return jsonify(best)
+
+            # Confidence-thresholded voting
+            high_conf = [r for r in results if r['confidence'] >= ENSEMBLE_CONF_THRESHOLD]
+            vote_pool = high_conf if high_conf else results
+
+            # Majority vote on prediction
+            preds = [r['prediction'] for r in vote_pool]
+            counts = Counter(preds)
+            top_pred = counts.most_common(1)[0][0]
+
+            # Among models voting top_pred, pick highest confidence for reporting
+            top_models = [r for r in vote_pool if r['prediction'] == top_pred]
+            best = max(top_models, key=lambda r: r['confidence'])
+
+            response = {
+                'prediction': int(top_pred),
+                'label': 'BENIGN' if top_pred == 0 else 'ATTACK',
+                'confidence': float(best['confidence']),
+                'model_selected': 'ensemble',
+                'evaluated_models': [
+                    {'model': r['model'], 'confidence': r['confidence'], 'prediction': r['prediction']}
+                    for r in results
+                ],
+                'timestamp': datetime.now().isoformat()
+            }
+            return jsonify(response)
         else:
             if models.get(model_name) is None:
                 return jsonify({'error': f'Model {model_name} not available'}), 400
@@ -255,7 +275,7 @@ def predict():
             result['timestamp'] = datetime.now().isoformat()
             result['model_selected'] = model_name
             return jsonify(result)
-
+    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -300,7 +320,7 @@ def simulate():
             indices = np.random.choice(len(X_sim), size=min(num_packets, len(X_sim)), replace=False)
         
         samples = X_sim.iloc[indices]
-
+        
         def predict_with_model(name, row_array):
             model = models.get(name)
             arr = row_array.reshape(1, -1)
@@ -313,10 +333,10 @@ def simulate():
             else:
                 conf = 1.0
             return pred, conf
-
+        
         # Get actual labels if available
         actual_labels = y_sim.iloc[indices].tolist() if y_sim is not None else []
-
+        
         results = []
         for i, (_, sample_row) in enumerate(samples.iterrows()):
             row_array = sample_row.to_numpy(dtype=float)
@@ -325,10 +345,21 @@ def simulate():
                 for m in available_models:
                     pred, conf = predict_with_model(m, row_array)
                     candidate_preds.append({'model': m, 'prediction': int(pred), 'confidence': conf})
-                best = max(candidate_preds, key=lambda r: r['confidence'])
-                pred = best['prediction']
+
+                # Confidence-thresholded voting
+                high_conf = [r for r in candidate_preds if r['confidence'] >= ENSEMBLE_CONF_THRESHOLD]
+                vote_pool = high_conf if high_conf else candidate_preds
+
+                preds = [r['prediction'] for r in vote_pool]
+                counts = Counter(preds)
+                top_pred = counts.most_common(1)[0][0]
+
+                top_models = [r for r in vote_pool if r['prediction'] == top_pred]
+                best = max(top_models, key=lambda r: r['confidence'])
+
+                pred = top_pred
                 conf = best['confidence']
-                selected_model = best['model']
+                selected_model = 'ensemble'
             else:
                 pred, conf = predict_with_model(model_name, row_array)
                 selected_model = model_name
