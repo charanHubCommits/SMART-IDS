@@ -6,7 +6,8 @@ A real-time network intrusion detection system using machine learning models to 
 
 - **Multi-Model Support**: Random Forest, Decision Tree, XGBoost, Logistic Regression
 - **Auto Model Selection**: Automatically chooses the most confident model for each prediction
-- **Real-Time Simulation**: Simulate network traffic and get instant predictions
+- **Live Packet Capture**: Capture real-time network traffic directly using `pyshark` and get instant predictions
+- **Real-Time Simulation**: Simulate network traffic using dataset files for testing
 - **Interactive Dashboard**: Web-based interface with live charts and statistics
 - **Model Comparison**: Compare performance across different ML models
 
@@ -134,9 +135,11 @@ The web interface will be available at:
 ### Using the Dashboard
 
 1. **Select Model**: Choose a specific model or "Auto (best confidence)" mode
-2. **Start Simulation**: Click "Start Simulation" to begin real-time traffic analysis
-3. **View Results**: See predictions, confidence scores, and statistics in real-time
-4. **Model Info**: Click "Model Info" to see detailed model information
+2. **Choose Mode**: Use the tabs on the left to select either **Simulation** or **Live Capture**
+3. **Start Analysis**: 
+   - *In Simulation*: Adjust the speed and click "Start Simulation"
+   - *In Live Capture*: Enter your network interface (or leave blank to auto-detect) and click "Start Live Capture" (Note: may require administrator/root privileges)
+4. **View Results**: See predictions, confidence scores, and statistics in real-time
 
 ## Project Structure
 
@@ -170,6 +173,9 @@ SMART-IDS/
 - `GET /` - Main dashboard
 - `POST /api/predict` - Single packet prediction
 - `POST /api/simulate` - Simulate multiple packets
+- `POST /api/live/start` - Start live packet capture thread
+- `POST /api/live/stop` - Stop live packet capture thread
+- `GET /api/live/results` - Get latest live packet flow features and predictions
 - `GET /api/stats` - Get statistics
 - `POST /api/reset_stats` - Reset statistics
 - `GET /api/model_info/<model_name>` - Get model information
