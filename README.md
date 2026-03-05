@@ -146,6 +146,7 @@ The web interface will be available at:
 ```
 SMART-IDS/
 ├── app.py                      # Flask web application
+├── packet_capture.py           # Live packet capture and feature extraction module
 ├── train_model.py              # Model training script
 ├── move_models.py              # Utility to move models
 ├── requirements.txt            # Python dependencies
