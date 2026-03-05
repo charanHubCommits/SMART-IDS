@@ -3,7 +3,9 @@
 
 // Global state
 let simulationInterval = null;
+let liveCaptureInterval = null;
 let isSimulating = false;
+let isLiveCapturing = false;
 let detectionHistory = [];
 let stats = {
     total: 0,
@@ -141,11 +143,14 @@ function setupEventListeners() {
     // Stop simulation button
     document.getElementById('stopSimulation').addEventListener('click', stopSimulation);
 
+    // Live capture buttons
+    document.getElementById('startLiveCapture').addEventListener('click', startLiveCapture);
+    document.getElementById('stopLiveCapture').addEventListener('click', stopLiveCapture);
+
     // Reset stats button
     document.getElementById('resetStats').addEventListener('click', resetStats);
 
-    // Model info button
-    document.getElementById('modelInfo').addEventListener('click', showModelInfo);
+    // Initial alert structure setup (removed modelInfo listener since button was commented out)
 }
 
 // Start the simulation
@@ -170,6 +175,7 @@ function startSimulation() {
     isSimulating = true;
     document.getElementById('startSimulation').disabled = true;
     document.getElementById('stopSimulation').disabled = false;
+    document.getElementById('startLiveCapture').disabled = true; // Disable live capture while simulating
 
     // Start periodic simulation - read model from dropdown each time to allow dynamic switching
     simulationInterval = setInterval(() => {
@@ -191,6 +197,7 @@ function stopSimulation() {
 
     document.getElementById('startSimulation').disabled = false;
     document.getElementById('stopSimulation').disabled = true;
+    document.getElementById('startLiveCapture').disabled = false; // Re-enable live capture
 
     showAlert('Simulation stopped', 'info');
 }
@@ -253,6 +260,109 @@ async function simulatePacket(model) {
         console.error('Simulation error:', error);
         showAlert(`Error: ${error.message}`, 'danger');
         stopSimulation();
+    }
+}
+
+// Start Live Capture
+async function startLiveCapture() {
+    if (isLiveCapturing) return;
+
+    const iface = document.getElementById('networkInterface').value;
+    
+    document.getElementById('startLiveCapture').disabled = true;
+    document.getElementById('stopLiveCapture').disabled = false;
+    document.getElementById('startSimulation').disabled = true; // Disable simulation while live
+    document.getElementById('captureStatsContainer').style.display = 'block';
+    
+    try {
+        const response = await fetch('/api/live/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ interface: iface })
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        
+        isLiveCapturing = true;
+        console.log(`Live capture started on ${data.interface || 'auto-detect'}`);
+        showAlert(`Live capture started on interface: ${data.interface || 'auto-detect'}`, 'success');
+        
+        // Poll for results every second
+        liveCaptureInterval = setInterval(pollLiveResults, 1000);
+        
+    } catch (error) {
+        console.error('Failed to start live capture:', error);
+        showAlert(`Failed to start live capture: ${error.message}`, 'danger');
+        stopLiveCapture();
+    }
+}
+
+// Stop Live Capture
+async function stopLiveCapture() {
+    if (!isLiveCapturing && !document.getElementById('stopLiveCapture').disabled) {
+        // Force UI reset even if stat out of sync
+    } else if (!isLiveCapturing) {
+        return;
+    }
+
+    try {
+        await fetch('/api/live/stop', { method: 'POST' });
+    } catch (e) {
+        console.error('Error stopping capture:', e);
+    }
+    
+    isLiveCapturing = false;
+    if (liveCaptureInterval) {
+        clearInterval(liveCaptureInterval);
+        liveCaptureInterval = null;
+    }
+    
+    document.getElementById('startLiveCapture').disabled = false;
+    document.getElementById('stopLiveCapture').disabled = true;
+    document.getElementById('startSimulation').disabled = false;
+    document.getElementById('captureStatsContainer').style.display = 'none';
+    
+    showAlert('Live capture stopped', 'info');
+}
+
+// Poll for live results
+async function pollLiveResults() {
+    if (!isLiveCapturing) return;
+    
+    try {
+        const modelSelect = document.getElementById('modelSelect');
+        const model = modelSelect.disabled ? 'auto' : modelSelect.value;
+        
+        const response = await fetch(`/api/live/results?model=${model}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.error) throw new Error(data.error);
+        
+        // Process results
+        if (data.results && data.results.length > 0) {
+            data.results.forEach(result => {
+                // Ensure correct structure for processDetection
+                // live results use flow_key as packet_id, we map it back
+                processDetection(result);
+            });
+        }
+        
+        // Update capture stats if available
+        if (data.capture_stats) {
+            document.getElementById('packetsProcessed').textContent = data.capture_stats.packets_processed || 0;
+            document.getElementById('activeFlows').textContent = data.capture_stats.active_flows || 0;
+        }
+        
+        // The processDetection function handles global stats incrementing locally for the charts,
+        // so we don't need to aggressively sync data.stats here unless we drift heavily.
+        
+    } catch (error) {
+        console.error('Error polling live results:', error);
     }
 }
 
@@ -638,6 +748,3 @@ function showAlert(message, type = 'info', duration = 3000) {
 }
 
 console.log('SmartIDS JavaScript loaded successfully');
-
-
-

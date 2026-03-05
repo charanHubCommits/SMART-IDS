@@ -43,26 +43,72 @@
                             </select>
                         </div>
 
-                        <!-- Simulation Controls -->
-                        <div class="mb-3">
-                            <label for="packetRate" class="form-label">Simulation Speed: <span id="rateValue">1 pkt/sec</span></label>
-                            <input type="range" class="form-range" id="packetRate" min="1" max="5" value="1" step="1">
-                            <small class="text-muted">1 = Slow (best for demo), 5 = Fast</small>
+                        <!-- Mode Tabs -->
+                        <ul class="nav nav-tabs mb-3" id="modeTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="simulation-tab" data-bs-toggle="tab" data-bs-target="#simulation-pane" type="button" role="tab" aria-controls="simulation-pane" aria-selected="true">Simulation</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="live-tab" data-bs-toggle="tab" data-bs-target="#live-pane" type="button" role="tab" aria-controls="live-pane" aria-selected="false">Live Capture</button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="myTabContent">
+                            <!-- Simulation Pane -->
+                            <div class="tab-pane fade show active" id="simulation-pane" role="tabpanel" aria-labelledby="simulation-tab">
+                                <!-- Simulation Controls -->
+                                <div class="mb-3">
+                                    <label for="packetRate" class="form-label">Simulation Speed: <span id="rateValue">1 pkt/sec</span></label>
+                                    <input type="range" class="form-range" id="packetRate" min="1" max="5" value="1" step="1">
+                                    <small class="text-muted">1 = Slow (best for demo), 5 = Fast</small>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-grid gap-2 mb-3">
+                                    <button class="btn btn-success" id="startSimulation">
+                                        <i class="fas fa-play"></i> Start Simulation
+                                    </button>
+                                    <button class="btn btn-danger" id="stopSimulation" disabled>
+                                        <i class="fas fa-stop"></i> Stop Simulation
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Live Capture Pane -->
+                            <div class="tab-pane fade" id="live-pane" role="tabpanel" aria-labelledby="live-tab">
+                                <div class="mb-3">
+                                    <label for="networkInterface" class="form-label">Network Interface</label>
+                                    <input type="text" class="form-control" id="networkInterface" placeholder="Auto-detect (e.g., en0, eth0)">
+                                    <small class="text-muted">Leave blank for auto-detect</small>
+                                </div>
+                                <div class="alert alert-warning py-2 mb-3 mt-1" style="font-size: 0.85em;">
+                                    <i class="fas fa-exclamation-triangle"></i> May require administrator/root privileges to capture packets.
+                                </div>
+                                
+                                <!-- Live Action Buttons -->
+                                <div class="d-grid gap-2 mb-3">
+                                    <button class="btn btn-success" id="startLiveCapture">
+                                        <i class="fas fa-broadcast-tower"></i> Start Live Capture
+                                    </button>
+                                    <button class="btn btn-danger" id="stopLiveCapture" disabled>
+                                        <i class="fas fa-stop"></i> Stop Live Capture
+                                    </button>
+                                </div>
+                                
+                                <!-- Capture Stats -->
+                                <div class="mt-2 border-top pt-2" id="captureStatsContainer" style="display: none; font-size: 0.85em;">
+                                    <strong>Capture Core Stats:</strong>
+                                    <div>Packets Processed: <span id="packetsProcessed">0</span></div>
+                                    <div>Active Flows: <span id="activeFlows">0</span></div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-success" id="startSimulation">
-                                <i class="fas fa-play"></i> Start Simulation
-                            </button>
-                            <button class="btn btn-danger" id="stopSimulation" disabled>
-                                <i class="fas fa-stop"></i> Stop Simulation
-                            </button>
+                        <!-- Common Actions -->
+                        <div class="d-grid gap-2 border-top pt-3">
                             <button class="btn btn-warning" id="resetStats">
-                                <i class="fas fa-redo"></i> Reset Stats
-                            </button>
-                            <button class="btn btn-info" id="modelInfo">
-                                <i class="fas fa-info-circle"></i> Model Info
+                                <i class="fas fa-redo"></i> Reset Dashboard Stats
                             </button>
                         </div>
                     </div>
@@ -198,4 +244,3 @@
     <script src="/static/js/app.js?v=9"></script>
 </body>
 </html>
-
