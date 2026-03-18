@@ -27,13 +27,20 @@ scalers = {}
 feature_names = []  
   
 # Ensemble configuration  
+# Weights derived from model evaluation (attack recall focus):
+# - decision_tree:        best attack recall (0.89), best at Web Attacks
+# - random_forest:        strong overall (0.87 recall), zero false alarms
+# - xgboost:              strong overall (0.87 recall), near-zero false alarms
+# - logistic_regression:  0% attack recall — effectively disabled
 MODEL_WEIGHTS = {  
-    "random_forest": 1.0,  
-    "xgboost": 0.85,  
-    "decision_tree": 0.7,  
+    "random_forest": 1,  
+    "xgboost": 0.7,  
+    "decision_tree": 1.2,  
     "logistic_regression": 0.6,  
 }  
-ATTACK_OVERRIDE_THRESHOLD = 0.85  
+# Lowered from 0.85: if ANY strong model flags an attack with decent
+# confidence, override the ensemble to ATTACK. This reduces missed attacks.
+ATTACK_OVERRIDE_THRESHOLD = 0.6  
   
 def load_models_and_scalers():  
     """Load available models and shared scaler from disk."""  
@@ -251,7 +258,7 @@ def get_prediction(model_name, features_array):
         for r in results:  
             weight = MODEL_WEIGHTS.get(r['model'], 1.0)  
             effective_conf = r['confidence'] * weight  
-            if r['prediction'] == 1 and effective_conf >= ATTACK_OVERRIDE_THRESHOLD:  
+            if r['prediction'] != 0 and effective_conf >= ATTACK_OVERRIDE_THRESHOLD:  
                 override_candidates.append((effective_conf, r))  
 
         decision_mode = "weighted"  
@@ -267,7 +274,7 @@ def get_prediction(model_name, features_array):
             for r in results:  
                 weight = MODEL_WEIGHTS.get(r['model'], 1.0)  
                 score = r['confidence'] * weight  
-                if r['prediction'] == 1:  
+                if r['prediction'] != 0:  
                     attack_score += score  
                 else:  
                     benign_score += score  
@@ -277,7 +284,8 @@ def get_prediction(model_name, features_array):
             best = None  
             best_score = -1.0  
             for r in results:  
-                if r['prediction'] == final_pred:  
+                r_binary = 1 if r['prediction'] != 0 else 0
+                if r_binary == final_pred:  
                     weight = MODEL_WEIGHTS.get(r['model'], 1.0)  
                     score = r['confidence'] * weight  
                     if score > best_score:  
@@ -402,7 +410,7 @@ def simulate():
                 for r in candidate_preds:  
                     weight = MODEL_WEIGHTS.get(r['model'], 1.0)  
                     effective_conf = r['confidence'] * weight  
-                    if r['prediction'] == 1 and effective_conf >= ATTACK_OVERRIDE_THRESHOLD:  
+                    if r['prediction'] != 0 and effective_conf >= ATTACK_OVERRIDE_THRESHOLD:  
                         override_candidates.append((effective_conf, r))  
   
                 if override_candidates:  
@@ -417,7 +425,7 @@ def simulate():
                     for r in candidate_preds:  
                         weight = MODEL_WEIGHTS.get(r['model'], 1.0)  
                         score = r['confidence'] * weight  
-                        if r['prediction'] == 1:  
+                        if r['prediction'] != 0:  
                             attack_score += score  
                         else:  
                             benign_score += score  
@@ -427,7 +435,8 @@ def simulate():
                     best = None  
                     best_score = -1.0  
                     for r in candidate_preds:  
-                        if r['prediction'] == pred:  
+                        r_binary = 1 if r['prediction'] != 0 else 0
+                        if r_binary == pred:  
                             weight = MODEL_WEIGHTS.get(r['model'], 1.0)  
                             score = r['confidence'] * weight  
                             if score > best_score:  
